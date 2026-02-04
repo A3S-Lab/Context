@@ -1,19 +1,34 @@
 # A3S Context
 
-**Autonomous Agent Adaptive Storage** - A hierarchical context management system for AI agents.
+<p align="center">
+  <strong>Hierarchical Context Management for AI Agents</strong>
+</p>
+
+<p align="center">
+  <em>Utility layer — semantic search, multi-level digests, and flexible storage backends</em>
+</p>
+
+<p align="center">
+  <a href="#key-features">Features</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#development">Development</a>
+</p>
+
+---
 
 ## Overview
 
-A3S Context provides a unified way to manage different types of context (knowledge, memory, capabilities) with automatic summarization, semantic search, and intelligent retrieval. It's designed specifically for AI agents that need to efficiently manage and retrieve large amounts of contextual information.
+**A3S Context** provides hierarchical context management with automatic summarization, semantic search, and intelligent retrieval. Designed for AI agents that need to efficiently manage large amounts of contextual information.
 
 ## Key Features
 
-- **🗂️ Hierarchical Organization**: URI-like pathways (`a3s://namespace/path/to/node`) for intuitive context organization
-- **📊 Multi-Level Digests**: Automatic generation of brief/summary/full content levels for efficient retrieval
-- **🔍 Semantic Search**: Vector-based similarity search with hierarchical exploration
-- **💾 Flexible Storage**: Local file-based or in-memory storage backends
-- **🎯 Namespace Isolation**: Separate namespaces for knowledge, memory, capabilities, and sessions
-- **⚡ Async-First**: Built on Tokio for high-performance concurrent operations
+- **Hierarchical Organization**: URI-like pathways (`a3s://namespace/path/to/node`) for intuitive context organization
+- **Multi-Level Digests**: Automatic generation of brief/summary/full content levels for efficient retrieval
+- **Semantic Search**: Vector-based similarity search with hierarchical exploration
+- **Flexible Storage**: Local file-based or in-memory storage backends
+- **Namespace Isolation**: Separate namespaces for knowledge, memory, capabilities, and sessions
+- **Async-First**: Built on Tokio for high-performance concurrent operations
 
 ## Architecture
 
@@ -36,17 +51,6 @@ A3S Context provides a unified way to manage different types of context (knowled
 
 4. **Node Types**: Different kinds of content
    - Document, Code, Markdown, Memory, Capability, Message, Data
-
-### Design Differences from OpenViking
-
-While inspired by OpenViking's concepts, A3S Context has a completely different implementation:
-
-1. **Pure Rust**: No Python dependencies, fully native Rust implementation
-2. **Simplified Architecture**: Cleaner separation of concerns with trait-based abstractions
-3. **Different URI Scheme**: `a3s://` instead of `viking://`
-4. **Modular Storage**: Pluggable storage backends via traits
-5. **Async-First Design**: Built on Tokio from the ground up
-6. **Simplified Digest Model**: Three-level system (Brief/Summary/Full) vs OpenViking's L0/L1/L2
 
 ## Installation
 
