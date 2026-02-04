@@ -1,0 +1,70 @@
+# A3S Context Configuration Example
+
+# Storage configuration
+storage:
+  backend: local  # local, memory, or remote
+  path: ./a3s_data
+  vector_index:
+    index_type: hnsw
+    hnsw_m: 16
+    hnsw_ef_construction: 200
+
+# Embedding model configuration
+embedding:
+  provider: openai  # openai or custom
+  api_base: https://api.openai.com/v1
+  # api_key: your-api-key-here  # Or set A3S_EMBEDDING_API_KEY env var
+  model: text-embedding-3-small
+  dimension: 1536
+  batch_size: 32
+
+# LLM for digest generation
+llm:
+  provider: openai
+  api_base: https://api.openai.com/v1
+  # api_key: your-api-key-here  # Or set A3S_LLM_API_KEY env var
+  model: gpt-4
+  temperature: 0.0
+  auto_digest: true  # Automatically generate brief/summary digests
+
+# Retrieval configuration
+retrieval:
+  default_limit: 10
+  score_threshold: 0.5
+  hierarchical: true  # Enable hierarchical directory-aware search
+  max_depth: 3
+  rerank: false
+  # rerank_model: bge-reranker-v2-m3
+
+# Ingest configuration
+ingest:
+  extensions:
+    - md
+    - txt
+    - rs
+    - py
+    - js
+    - ts
+    - go
+    - java
+    - c
+    - cpp
+    - h
+    - json
+    - yaml
+    - toml
+  max_file_size: 10485760  # 10MB
+  chunk_size: 1000
+  chunk_overlap: 200
+  ignore_patterns:
+    - .git
+    - node_modules
+    - target
+    - __pycache__
+    - .venv
+    - "*.pyc"
+    - "*.pyo"
+    - .DS_Store
+
+# Logging
+log_level: info  # trace, debug, info, warn, error
