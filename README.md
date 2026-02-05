@@ -144,6 +144,11 @@ retrieval:
   score_threshold: 0.5
   hierarchical: true
   max_depth: 3
+  rerank: true                    # Enable reranking
+  rerank_config:
+    provider: cohere              # cohere, jina, openai, mock
+    model: rerank-english-v3.0    # Model name (optional)
+    top_n: 10                     # Top N results after reranking
 
 ingest:
   max_file_size: 10485760  # 10MB
@@ -172,6 +177,18 @@ export A3S_EMBEDDING_MODEL=text-embedding-3-small
 export A3S_LLM_API_BASE=https://api.openai.com/v1
 export A3S_LLM_API_KEY=your-api-key
 export A3S_LLM_MODEL=gpt-4
+
+# Reranking
+export A3S_RERANK_PROVIDER=cohere    # cohere, jina, openai, mock
+export A3S_RERANK_API_BASE=https://api.cohere.ai/v1
+export A3S_RERANK_API_KEY=your-api-key
+export A3S_RERANK_MODEL=rerank-english-v3.0
+export A3S_RERANK_TOP_N=10
+
+# Provider-specific API keys (fallback)
+export COHERE_API_KEY=your-cohere-key
+export JINA_API_KEY=your-jina-key
+export OPENAI_API_KEY=your-openai-key
 
 # Logging
 export A3S_LOG_LEVEL=info
@@ -233,6 +250,12 @@ a3s-context/
 │   ├── ingest.rs           # Content ingestion
 │   ├── retrieval.rs        # Hierarchical retrieval
 │   ├── session.rs          # Session management
+│   ├── rerank/             # Reranking module
+│   │   ├── mod.rs          # Reranker trait and factory
+│   │   ├── mock.rs         # Mock reranker for testing
+│   │   ├── cohere.rs       # Cohere Rerank API
+│   │   ├── jina.rs         # Jina Reranker API
+│   │   └── openai.rs       # OpenAI pointwise reranking
 │   └── storage/
 │       ├── mod.rs          # Storage abstraction
 │       ├── local.rs        # Local file storage
@@ -358,21 +381,29 @@ A3S Context is a **utility component** of the A3S ecosystem — a standalone hie
 
 ### Phase 2: Search Enhancement 🚧
 
-- [ ] Remote storage backend (gRPC-based)
-- [ ] Advanced reranking support
-- [ ] Sparse + dense hybrid search
+- [x] Reranking support (Cohere, Jina, OpenAI, Mock providers)
+- [ ] Intent analyzer (multi-condition query decomposition)
+- [ ] Score propagation (directory score = weighted child scores)
+- [ ] Convergence detection (stop after N rounds with unchanged topk)
+- [ ] Sparse + dense hybrid search (BM25 + vector)
 - [ ] Query expansion and reformulation
+- [ ] Glob/Find API (`glob(pattern, uri)`, `find(query, target_uri)`)
+- [ ] Volcengine Rerank provider (doubao-seed-rerank)
 
 ### Phase 3: Ecosystem Integration 📋
 
+- [ ] Remote storage backend (gRPC-based)
 - [ ] Implement `a3s-box-core::ContextProvider` trait
 - [ ] Native integration with `a3s-code` for agent memory
 - [ ] Python bindings (PyO3)
 - [ ] Web UI for visualization
 - [ ] REST API server mode
+- [ ] Retrieval trajectory visualization
 
-### Phase 4: Scale & Advanced 📋
+### Phase 4: Advanced Features 📋
 
+- [ ] VLM support (Vision Language Model for image understanding)
+- [ ] Automatic memory extraction (session -> long-term memory)
 - [ ] Distributed deployment support
 - [ ] Advanced memory management (decay, consolidation)
 - [ ] Plugin system for custom parsers

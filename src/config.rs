@@ -50,11 +50,9 @@ impl Config {
         let content = std::fs::read_to_string(path)?;
 
         let config: Config = if path.ends_with(".yaml") || path.ends_with(".yml") {
-            serde_yaml::from_str(&content)
-                .map_err(|e| crate::A3SError::Config(e.to_string()))?
+            serde_yaml::from_str(&content).map_err(|e| crate::A3SError::Config(e.to_string()))?
         } else if path.ends_with(".toml") {
-            toml::from_str(&content)
-                .map_err(|e| crate::A3SError::Config(e.to_string()))?
+            toml::from_str(&content).map_err(|e| crate::A3SError::Config(e.to_string()))?
         } else {
             serde_json::from_str(&content)?
         };
@@ -96,6 +94,25 @@ impl Config {
         // Log level
         if let Ok(level) = std::env::var("A3S_LOG_LEVEL") {
             config.log_level = level;
+        }
+
+        // Rerank
+        if let Ok(provider) = std::env::var("A3S_RERANK_PROVIDER") {
+            config.retrieval.rerank_config.provider = provider;
+        }
+        if let Ok(api_base) = std::env::var("A3S_RERANK_API_BASE") {
+            config.retrieval.rerank_config.api_base = Some(api_base);
+        }
+        if let Ok(api_key) = std::env::var("A3S_RERANK_API_KEY") {
+            config.retrieval.rerank_config.api_key = Some(api_key);
+        }
+        if let Ok(model) = std::env::var("A3S_RERANK_MODEL") {
+            config.retrieval.rerank_config.model = Some(model);
+        }
+        if let Ok(top_n) = std::env::var("A3S_RERANK_TOP_N") {
+            if let Ok(n) = top_n.parse() {
+                config.retrieval.rerank_config.top_n = Some(n);
+            }
         }
 
         config
@@ -289,8 +306,12 @@ pub struct RetrievalConfig {
     #[serde(default)]
     pub rerank: bool,
 
-    /// Rerank model
+    /// Rerank model (deprecated, use rerank_config.model instead)
     pub rerank_model: Option<String>,
+
+    /// Rerank configuration
+    #[serde(default)]
+    pub rerank_config: RerankConfig,
 }
 
 impl Default for RetrievalConfig {
@@ -302,6 +323,39 @@ impl Default for RetrievalConfig {
             max_depth: default_max_depth(),
             rerank: false,
             rerank_model: None,
+            rerank_config: RerankConfig::default(),
+        }
+    }
+}
+
+/// Rerank configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RerankConfig {
+    /// Provider type (cohere, jina, openai, mock)
+    #[serde(default = "default_rerank_provider")]
+    pub provider: String,
+
+    /// API base URL
+    pub api_base: Option<String>,
+
+    /// API key
+    pub api_key: Option<String>,
+
+    /// Model name
+    pub model: Option<String>,
+
+    /// Number of top results to return after reranking
+    pub top_n: Option<usize>,
+}
+
+impl Default for RerankConfig {
+    fn default() -> Self {
+        Self {
+            provider: default_rerank_provider(),
+            api_base: None,
+            api_key: None,
+            model: None,
+            top_n: None,
         }
     }
 }
@@ -405,6 +459,10 @@ fn default_hierarchical() -> bool {
 
 fn default_max_depth() -> usize {
     3
+}
+
+fn default_rerank_provider() -> String {
+    "mock".to_string()
 }
 
 fn default_extensions() -> Vec<String> {
@@ -512,6 +570,43 @@ mod tests {
         assert!(config.hierarchical);
         assert_eq!(config.max_depth, 3);
         assert!(!config.rerank);
+        assert_eq!(config.rerank_config.provider, "mock");
+    }
+
+    #[test]
+    fn test_rerank_config_default() {
+        let config = RerankConfig::default();
+        assert_eq!(config.provider, "mock");
+        assert!(config.api_base.is_none());
+        assert!(config.api_key.is_none());
+        assert!(config.model.is_none());
+        assert!(config.top_n.is_none());
+    }
+
+    #[test]
+    fn test_rerank_config_from_env() {
+        std::env::set_var("A3S_RERANK_PROVIDER", "cohere");
+        std::env::set_var("A3S_RERANK_API_KEY", "test-key");
+        std::env::set_var("A3S_RERANK_MODEL", "rerank-english-v3.0");
+        std::env::set_var("A3S_RERANK_TOP_N", "5");
+
+        let config = Config::from_env();
+
+        assert_eq!(config.retrieval.rerank_config.provider, "cohere");
+        assert_eq!(
+            config.retrieval.rerank_config.api_key,
+            Some("test-key".to_string())
+        );
+        assert_eq!(
+            config.retrieval.rerank_config.model,
+            Some("rerank-english-v3.0".to_string())
+        );
+        assert_eq!(config.retrieval.rerank_config.top_n, Some(5));
+
+        std::env::remove_var("A3S_RERANK_PROVIDER");
+        std::env::remove_var("A3S_RERANK_API_KEY");
+        std::env::remove_var("A3S_RERANK_MODEL");
+        std::env::remove_var("A3S_RERANK_TOP_N");
     }
 
     #[test]

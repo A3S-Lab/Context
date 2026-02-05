@@ -33,6 +33,9 @@ pub enum A3SError {
     #[error("Retrieval error: {0}")]
     Retrieval(String),
 
+    #[error("Rerank error: {0}")]
+    Rerank(String),
+
     #[error("Session error: {0}")]
     Session(String),
 
@@ -109,6 +112,7 @@ mod tests {
         let _ = A3SError::DigestGeneration("test".to_string());
         let _ = A3SError::Ingest("test".to_string());
         let _ = A3SError::Retrieval("test".to_string());
+        let _ = A3SError::Rerank("test".to_string());
         let _ = A3SError::Session("test".to_string());
         let _ = A3SError::Config("test".to_string());
         let _ = A3SError::NotInitialized;

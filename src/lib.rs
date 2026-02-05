@@ -31,19 +31,20 @@
 //! }
 //! ```
 
+pub mod config;
 pub mod core;
 pub mod digest;
 pub mod embedding;
 pub mod error;
 pub mod ingest;
 pub mod pathway;
+pub mod rerank;
 pub mod retrieval;
 pub mod session;
 pub mod storage;
-pub mod config;
 
 pub use crate::config::Config;
-pub use crate::core::{Node, NodeKind, Namespace};
+pub use crate::core::{Namespace, Node, NodeKind};
 pub use crate::error::{A3SError, Result};
 pub use crate::pathway::Pathway;
 
@@ -104,11 +105,8 @@ impl A3SClient {
         target: T,
     ) -> Result<IngestResult> {
         let pathway = Pathway::parse(target.as_ref())?;
-        let processor = ingest::Processor::new(
-            self.storage.clone(),
-            self.embedder.clone(),
-            &self.config,
-        );
+        let processor =
+            ingest::Processor::new(self.storage.clone(), self.embedder.clone(), &self.config);
 
         processor.process(source.as_ref(), &pathway).await
     }
@@ -178,10 +176,13 @@ impl A3SClient {
             self.storage.clone(),
             self.embedder.clone(),
             &self.config,
-        ).await?;
+        )
+        .await?;
 
         let state = self.state.read().await;
-        state.active_sessions.insert(session.id().to_string(), session.clone());
+        state
+            .active_sessions
+            .insert(session.id().to_string(), session.clone());
 
         Ok(session)
     }

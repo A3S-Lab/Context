@@ -1,5 +1,7 @@
 //! Integration tests for A3S Context
 
+use a3s_context::config::RerankConfig;
+use a3s_context::rerank::{MockReranker, RerankDocument, Reranker};
 use a3s_context::{A3SClient, Config, Namespace, Pathway};
 
 fn create_test_config() -> Config {
@@ -10,11 +12,28 @@ fn create_test_config() -> Config {
     config
 }
 
+fn create_test_config_with_rerank() -> Config {
+    let mut config = create_test_config();
+    config.retrieval.rerank = true;
+    config.retrieval.rerank_config = RerankConfig {
+        provider: "mock".to_string(),
+        api_base: None,
+        api_key: None,
+        model: None,
+        top_n: Some(5),
+    };
+    config
+}
+
 #[tokio::test]
 async fn test_client_initialization() {
     let config = create_test_config();
     let result = A3SClient::new(config).await;
-    assert!(result.is_ok(), "Client initialization failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Client initialization failed: {:?}",
+        result.err()
+    );
 }
 
 #[tokio::test]
@@ -64,4 +83,70 @@ async fn test_client_with_mock_embedder() {
     // Test that we can get stats
     let stats = client.stats().await.unwrap();
     assert_eq!(stats.total_nodes, 0);
+}
+
+#[tokio::test]
+async fn test_client_with_rerank_enabled() {
+    let config = create_test_config_with_rerank();
+    let result = A3SClient::new(config).await;
+    assert!(
+        result.is_ok(),
+        "Client with rerank should initialize: {:?}",
+        result.err()
+    );
+}
+
+#[tokio::test]
+async fn test_mock_reranker_integration() {
+    let reranker = MockReranker::new();
+    let documents = vec![
+        RerankDocument {
+            id: "doc1".to_string(),
+            text: "The capital of France is Paris.".to_string(),
+        },
+        RerankDocument {
+            id: "doc2".to_string(),
+            text: "Python is a programming language.".to_string(),
+        },
+        RerankDocument {
+            id: "doc3".to_string(),
+            text: "Paris is known for the Eiffel Tower.".to_string(),
+        },
+    ];
+
+    let results = reranker
+        .rerank("What is the capital of France?", documents, 2)
+        .await
+        .unwrap();
+
+    assert_eq!(results.len(), 2);
+    // Results should be sorted by score
+    assert!(results[0].score >= results[1].score);
+}
+
+#[test]
+fn test_rerank_config_default() {
+    let config = RerankConfig::default();
+    assert_eq!(config.provider, "mock");
+    assert!(config.api_base.is_none());
+    assert!(config.api_key.is_none());
+    assert!(config.model.is_none());
+    assert!(config.top_n.is_none());
+}
+
+#[test]
+fn test_rerank_config_custom() {
+    let config = RerankConfig {
+        provider: "cohere".to_string(),
+        api_base: Some("https://custom.api".to_string()),
+        api_key: Some("test-key".to_string()),
+        model: Some("rerank-english-v3.0".to_string()),
+        top_n: Some(10),
+    };
+
+    assert_eq!(config.provider, "cohere");
+    assert_eq!(config.api_base, Some("https://custom.api".to_string()));
+    assert_eq!(config.api_key, Some("test-key".to_string()));
+    assert_eq!(config.model, Some("rerank-english-v3.0".to_string()));
+    assert_eq!(config.top_n, Some(10));
 }

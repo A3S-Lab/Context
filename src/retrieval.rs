@@ -4,10 +4,10 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use crate::config::RetrievalConfig;
-use crate::core::Namespace;
 use crate::embedding::Embedder;
 use crate::error::Result;
 use crate::pathway::Pathway;
+use crate::rerank::{create_reranker, RerankDocument, Reranker};
 use crate::storage::StorageBackend;
 use crate::{MatchedNode, QueryOptions, QueryResult};
 
@@ -16,6 +16,7 @@ pub struct Retriever {
     storage: Arc<dyn StorageBackend>,
     embedder: Arc<dyn Embedder>,
     config: RetrievalConfig,
+    reranker: Option<Arc<dyn Reranker>>,
 }
 
 impl Retriever {
@@ -24,19 +25,29 @@ impl Retriever {
         embedder: Arc<dyn Embedder>,
         config: &RetrievalConfig,
     ) -> Self {
+        // Create reranker if reranking is enabled
+        let reranker = if config.rerank {
+            match create_reranker(&config.rerank_config) {
+                Ok(r) => Some(r),
+                Err(e) => {
+                    tracing::warn!("Failed to create reranker: {}, reranking disabled", e);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
         Self {
             storage,
             embedder,
             config: config.clone(),
+            reranker,
         }
     }
 
     /// Search for relevant context
-    pub async fn search(
-        &self,
-        query: &str,
-        options: Option<QueryOptions>,
-    ) -> Result<QueryResult> {
+    pub async fn search(&self, query: &str, options: Option<QueryOptions>) -> Result<QueryResult> {
         let options = options.unwrap_or_default();
 
         // Generate query embedding
@@ -66,6 +77,15 @@ impl Retriever {
 
         // Sort by score
         results.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
+
+        // Apply reranking if enabled
+        if let Some(ref reranker) = self.reranker {
+            let top_n = self.config.rerank_config.top_n.unwrap_or(limit);
+            results = self
+                .apply_reranking(query, results, reranker, top_n)
+                .await?;
+        }
+
         results.truncate(limit);
 
         let search_time = search_start.elapsed().as_millis() as u64;
@@ -76,6 +96,48 @@ impl Retriever {
             query_embedding_time_ms: embed_time,
             search_time_ms: search_time,
         })
+    }
+
+    /// Apply reranking to search results
+    async fn apply_reranking(
+        &self,
+        query: &str,
+        results: Vec<MatchedNode>,
+        reranker: &Arc<dyn Reranker>,
+        top_n: usize,
+    ) -> Result<Vec<MatchedNode>> {
+        if results.is_empty() {
+            return Ok(results);
+        }
+
+        // Convert results to rerank documents
+        let documents: Vec<RerankDocument> = results
+            .iter()
+            .map(|r| RerankDocument {
+                id: r.pathway.to_string(),
+                text: r.summary.clone().unwrap_or_else(|| r.brief.clone()),
+            })
+            .collect();
+
+        // Rerank
+        let reranked = reranker.rerank(query, documents, top_n).await?;
+
+        // Create a map from pathway to original result
+        let result_map: std::collections::HashMap<String, MatchedNode> = results
+            .into_iter()
+            .map(|r| (r.pathway.to_string(), r))
+            .collect();
+
+        // Rebuild results in reranked order with updated scores
+        let mut reranked_results = Vec::with_capacity(reranked.len());
+        for rr in reranked {
+            if let Some(mut matched) = result_map.get(&rr.id).cloned() {
+                matched.score = rr.score;
+                reranked_results.push(matched);
+            }
+        }
+
+        Ok(reranked_results)
     }
 
     async fn flat_search(
@@ -250,5 +312,30 @@ mod tests {
         let a: Vec<f32> = (0..100).map(|i| (i as f32).sin()).collect();
         let b: Vec<f32> = (0..100).map(|i| (i as f32).sin()).collect();
         assert!((cosine_similarity(&a, &b) - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_retriever_config_with_rerank() {
+        use crate::config::{RerankConfig, RetrievalConfig};
+
+        let config = RetrievalConfig {
+            rerank: true,
+            rerank_config: RerankConfig {
+                provider: "mock".to_string(),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        assert!(config.rerank);
+        assert_eq!(config.rerank_config.provider, "mock");
+    }
+
+    #[test]
+    fn test_retriever_config_without_rerank() {
+        use crate::config::RetrievalConfig;
+
+        let config = RetrievalConfig::default();
+        assert!(!config.rerank);
     }
 }
