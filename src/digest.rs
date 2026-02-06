@@ -75,7 +75,11 @@ impl DigestGenerator {
     }
 
     /// Generate a digest for the given content
-    pub async fn generate(&self, content: &str, kind: crate::core::NodeKind) -> crate::Result<Digest> {
+    pub async fn generate(
+        &self,
+        content: &str,
+        kind: crate::core::NodeKind,
+    ) -> crate::Result<Digest> {
         // If no LLM client, use simple extraction
         if self.llm_client.is_none() {
             return Ok(self.generate_simple(content));
@@ -143,7 +147,7 @@ impl LLMClient {
         });
 
         let response = client
-            .post(&format!("{}/chat/completions", self.api_base))
+            .post(format!("{}/chat/completions", self.api_base))
             .header("Authorization", format!("Bearer {}", self.api_key))
             .json(&body)
             .send()
@@ -160,7 +164,9 @@ impl LLMClient {
 
         let content = result["choices"][0]["message"]["content"]
             .as_str()
-            .ok_or_else(|| crate::A3SError::DigestGeneration("Invalid response format".to_string()))?;
+            .ok_or_else(|| {
+                crate::A3SError::DigestGeneration("Invalid response format".to_string())
+            })?;
 
         Ok(content.to_string())
     }
@@ -286,7 +292,10 @@ mod tests {
     fn test_kind_to_str() {
         assert_eq!(kind_to_str(crate::core::NodeKind::Document), "document");
         assert_eq!(kind_to_str(crate::core::NodeKind::Code), "code");
-        assert_eq!(kind_to_str(crate::core::NodeKind::Markdown), "markdown document");
+        assert_eq!(
+            kind_to_str(crate::core::NodeKind::Markdown),
+            "markdown document"
+        );
         assert_eq!(kind_to_str(crate::core::NodeKind::Memory), "memory");
         assert_eq!(kind_to_str(crate::core::NodeKind::Capability), "capability");
         assert_eq!(kind_to_str(crate::core::NodeKind::Directory), "directory");

@@ -63,7 +63,7 @@ impl OpenAIReranker {
 
         let client = reqwest::Client::new();
         let response = client
-            .post(&format!("{}/chat/completions", self.api_base))
+            .post(format!("{}/chat/completions", self.api_base))
             .header("Authorization", format!("Bearer {}", self.api_key))
             .header("Content-Type", "application/json")
             .json(&request)

@@ -87,7 +87,7 @@ impl Reranker for JinaReranker {
 
         let client = reqwest::Client::new();
         let response = client
-            .post(&format!("{}/rerank", self.api_base))
+            .post(format!("{}/rerank", self.api_base))
             .header("Authorization", format!("Bearer {}", self.api_key))
             .header("Content-Type", "application/json")
             .json(&request)

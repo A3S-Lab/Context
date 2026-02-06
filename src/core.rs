@@ -32,7 +32,7 @@ impl Namespace {
         }
     }
 
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn parse(s: &str) -> Option<Self> {
         match s {
             "knowledge" => Some(Namespace::Knowledge),
             "memory" => Some(Namespace::Memory),
@@ -255,17 +255,24 @@ mod tests {
 
     #[test]
     fn test_namespace_from_str() {
-        assert_eq!(Namespace::from_str("knowledge"), Some(Namespace::Knowledge));
-        assert_eq!(Namespace::from_str("memory"), Some(Namespace::Memory));
-        assert_eq!(Namespace::from_str("capability"), Some(Namespace::Capability));
-        assert_eq!(Namespace::from_str("session"), Some(Namespace::Session));
-        assert_eq!(Namespace::from_str("invalid"), None);
+        assert_eq!(Namespace::parse("knowledge"), Some(Namespace::Knowledge));
+        assert_eq!(Namespace::parse("memory"), Some(Namespace::Memory));
+        assert_eq!(
+            Namespace::parse("capability"),
+            Some(Namespace::Capability)
+        );
+        assert_eq!(Namespace::parse("session"), Some(Namespace::Session));
+        assert_eq!(Namespace::parse("invalid"), None);
     }
 
     #[test]
     fn test_node_new() {
         let pathway = Pathway::parse("a3s://knowledge/docs/test").unwrap();
-        let node = Node::new(pathway.clone(), NodeKind::Document, "Test content".to_string());
+        let node = Node::new(
+            pathway.clone(),
+            NodeKind::Document,
+            "Test content".to_string(),
+        );
 
         assert_eq!(node.pathway, pathway);
         assert_eq!(node.kind, NodeKind::Document);
@@ -333,7 +340,11 @@ mod tests {
 
         assert!(node.relations.is_empty());
 
-        node.add_relation(target.clone(), RelationKind::References, "Test relation".to_string());
+        node.add_relation(
+            target.clone(),
+            RelationKind::References,
+            "Test relation".to_string(),
+        );
 
         assert_eq!(node.relations.len(), 1);
         assert_eq!(node.relations[0].target, target);

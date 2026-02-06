@@ -156,8 +156,10 @@ impl StorageBackend for MemoryStorage {
     }
 
     async fn stats(&self) -> Result<StorageStats> {
-        let mut stats = StorageStats::default();
-        stats.total_nodes = self.nodes.len() as u64;
+        let mut stats = StorageStats {
+            total_nodes: self.nodes.len() as u64,
+            ..Default::default()
+        };
 
         for entry in self.nodes.iter() {
             let node = entry.value();
@@ -225,7 +227,11 @@ mod tests {
         let storage = MemoryStorage::new(&config);
 
         let pathway = Pathway::parse("a3s://knowledge/test").unwrap();
-        let node = Node::new(pathway.clone(), NodeKind::Document, "Test content".to_string());
+        let node = Node::new(
+            pathway.clone(),
+            NodeKind::Document,
+            "Test content".to_string(),
+        );
 
         storage.put(&node).await.unwrap();
 
@@ -327,7 +333,10 @@ mod tests {
         storage.put(&node).await.unwrap();
 
         let embedding = vec![0.1, 0.2, 0.3];
-        storage.update_embedding(&pathway, embedding.clone()).await.unwrap();
+        storage
+            .update_embedding(&pathway, embedding.clone())
+            .await
+            .unwrap();
 
         let retrieved = storage.get(&pathway).await.unwrap();
         assert_eq!(retrieved.embedding, embedding);

@@ -26,7 +26,10 @@ impl Pathway {
 
     /// Create a new pathway
     pub fn new(namespace: Namespace, segments: Vec<String>) -> Self {
-        Self { namespace, segments }
+        Self {
+            namespace,
+            segments,
+        }
     }
 
     /// Parse a pathway from a string
@@ -34,10 +37,10 @@ impl Pathway {
         let s = s.trim();
 
         // Handle protocol prefix
-        let path_str = if s.starts_with(Self::PROTOCOL) {
-            &s[Self::PROTOCOL.len()..]
-        } else if s.starts_with('/') {
-            &s[1..]
+        let path_str = if let Some(rest) = s.strip_prefix(Self::PROTOCOL) {
+            rest
+        } else if let Some(rest) = s.strip_prefix('/') {
+            rest
         } else {
             s
         };
@@ -49,12 +52,13 @@ impl Pathway {
         let parts: Vec<&str> = path_str.split('/').filter(|s| !s.is_empty()).collect();
 
         if parts.is_empty() {
-            return Err(A3SError::InvalidPathway("No namespace specified".to_string()));
+            return Err(A3SError::InvalidPathway(
+                "No namespace specified".to_string(),
+            ));
         }
 
-        let namespace = Namespace::from_str(parts[0]).ok_or_else(|| {
-            A3SError::InvalidPathway(format!("Invalid namespace: {}", parts[0]))
-        })?;
+        let namespace = Namespace::parse(parts[0])
+            .ok_or_else(|| A3SError::InvalidPathway(format!("Invalid namespace: {}", parts[0])))?;
 
         let segments: Vec<String> = parts[1..].iter().map(|s| s.to_string()).collect();
 
@@ -68,7 +72,10 @@ impl Pathway {
             }
         }
 
-        Ok(Self { namespace, segments })
+        Ok(Self {
+            namespace,
+            segments,
+        })
     }
 
     /// Get the namespace
@@ -287,4 +294,3 @@ mod tests {
         assert_eq!(root.depth(), 0);
     }
 }
-

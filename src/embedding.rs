@@ -37,6 +37,7 @@ pub struct OpenAIEmbedder {
     api_key: String,
     model: String,
     dimension: usize,
+    #[allow(dead_code)]
     batch_size: usize,
 }
 
@@ -79,7 +80,7 @@ impl Embedder for OpenAIEmbedder {
         });
 
         let response = client
-            .post(&format!("{}/embeddings", self.api_base))
+            .post(format!("{}/embeddings", self.api_base))
             .header("Authorization", format!("Bearer {}", self.api_key))
             .json(&body)
             .send()

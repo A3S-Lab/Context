@@ -55,8 +55,8 @@ async fn test_pathway_operations() {
 #[tokio::test]
 async fn test_namespace_operations() {
     assert_eq!(Namespace::Knowledge.as_str(), "knowledge");
-    assert_eq!(Namespace::from_str("knowledge"), Some(Namespace::Knowledge));
-    assert_eq!(Namespace::from_str("invalid"), None);
+    assert_eq!(Namespace::parse("knowledge"), Some(Namespace::Knowledge));
+    assert_eq!(Namespace::parse("invalid"), None);
 }
 
 #[test]

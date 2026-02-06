@@ -144,8 +144,8 @@ mod tests {
 
     #[test]
     fn test_mock_reranker_default() {
-        let reranker = MockReranker::default();
-        // Just verify it can be created via Default
+        let reranker = MockReranker;
+        // Just verify it can be created
         let _ = reranker;
     }
 }

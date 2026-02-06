@@ -120,7 +120,7 @@ impl Config {
 
     /// Merge with another config (other takes precedence)
     pub fn merge(mut self, other: Config) -> Self {
-        if other.storage.path != PathBuf::from("./a3s_data") {
+        if other.storage.path != *"./a3s_data" {
             self.storage = other.storage;
         }
         if other.embedding.api_base.is_some() {
@@ -637,11 +637,15 @@ mod tests {
 
     #[test]
     fn test_config_merge() {
-        let mut config1 = Config::default();
-        config1.log_level = "info".to_string();
+        let config1 = Config {
+            log_level: "info".to_string(),
+            ..Default::default()
+        };
 
-        let mut config2 = Config::default();
-        config2.log_level = "debug".to_string();
+        let config2 = Config {
+            log_level: "debug".to_string(),
+            ..Default::default()
+        };
 
         let merged = config1.merge(config2);
         assert_eq!(merged.log_level, "debug");
