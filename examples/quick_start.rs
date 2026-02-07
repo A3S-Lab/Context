@@ -3,9 +3,7 @@ use a3s_context::{A3SClient, Config, QueryOptions};
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // Initialize logging
-    tracing_subscriber::fmt()
-        .with_env_filter("info")
-        .init();
+    tracing_subscriber::fmt().with_env_filter("info").init();
 
     println!("=== A3S Context Quick Start Example ===\n");
 

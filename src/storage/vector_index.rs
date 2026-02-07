@@ -26,8 +26,7 @@ impl VectorIndex {
     }
 
     pub async fn add(&self, pathway: &Pathway, vector: &[f32]) -> Result<()> {
-        self.vectors
-            .insert(pathway.to_string(), vector.to_vec());
+        self.vectors.insert(pathway.to_string(), vector.to_vec());
         Ok(())
     }
 

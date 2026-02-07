@@ -30,7 +30,9 @@ pub async fn create_backend(config: &StorageConfig) -> Result<Arc<dyn StorageBac
         }
         StorageBackendType::Remote => {
             // TODO: Implement remote storage
-            Err(crate::A3SError::Config("Remote storage not yet implemented".to_string()))
+            Err(crate::A3SError::Config(
+                "Remote storage not yet implemented".to_string(),
+            ))
         }
     }
 }

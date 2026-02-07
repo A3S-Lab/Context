@@ -35,7 +35,9 @@ impl Session {
         embedder: Arc<dyn Embedder>,
         config: &Config,
     ) -> Result<Self> {
-        let id = id.map(|s| s.to_string()).unwrap_or_else(|| Uuid::new_v4().to_string());
+        let id = id
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| Uuid::new_v4().to_string());
 
         Ok(Self {
             id,
@@ -95,8 +97,8 @@ pub enum MessageRole {
 mod tests {
     use super::*;
     use crate::config::{Config, VectorIndexConfig};
-    use crate::storage::MemoryStorage;
     use crate::embedding::MockEmbedder;
+    use crate::storage::MemoryStorage;
 
     fn create_test_embedder() -> Arc<dyn Embedder> {
         // Use mock embedder for testing (no API key required)
@@ -118,12 +120,9 @@ mod tests {
         let embedder = create_test_embedder();
         let config = Config::default();
 
-        let session = Session::new(
-            Some("test-session-id"),
-            storage,
-            embedder,
-            &config,
-        ).await.unwrap();
+        let session = Session::new(Some("test-session-id"), storage, embedder, &config)
+            .await
+            .unwrap();
 
         assert_eq!(session.id(), "test-session-id");
         assert_eq!(session.messages().len(), 0);
@@ -135,7 +134,9 @@ mod tests {
         let embedder = create_test_embedder();
         let config = Config::default();
 
-        let session = Session::new(None, storage, embedder, &config).await.unwrap();
+        let session = Session::new(None, storage, embedder, &config)
+            .await
+            .unwrap();
 
         assert!(!session.id().is_empty());
         assert_eq!(session.messages().len(), 0);
@@ -147,7 +148,9 @@ mod tests {
         let embedder = create_test_embedder();
         let config = Config::default();
 
-        let mut session = Session::new(None, storage, embedder, &config).await.unwrap();
+        let mut session = Session::new(None, storage, embedder, &config)
+            .await
+            .unwrap();
 
         session.add_message(MessageRole::User, "Hello".to_string());
         session.add_message(MessageRole::Assistant, "Hi there!".to_string());
@@ -165,7 +168,9 @@ mod tests {
         let embedder = create_test_embedder();
         let config = Config::default();
 
-        let mut session = Session::new(None, storage, embedder, &config).await.unwrap();
+        let mut session = Session::new(None, storage, embedder, &config)
+            .await
+            .unwrap();
 
         session.add_message(MessageRole::User, "Test message".to_string());
 
